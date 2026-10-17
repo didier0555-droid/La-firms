@@ -379,100 +379,24 @@ button, input, select, textarea { font: inherit; }
     .footer-main > p { order: 3; width: 100%; margin: 0; }
     .footer-bottom { align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding: 10px 0; }
 }
-/* FORZAR MOVIMIENTO EN CELULAR */
-@media (max-width: 768px) {
-  .marquee-track, .track, .work-track {
-    animation: scroll 25s linear infinite !important;
-    animation-play-state: running !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
+/* FIX FINAL - FUNCIONA PC Y CELULAR */
+.work-marquee {
+  overflow: hidden;
+  width: 100%;
 }
-
-/* Si el celular tiene "reducir movimiento", igual se mueve */
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track, .track, .work-track {
-    animation: scroll 25s linear infinite !important;
-  }
-}
-/* ===== ARREGLO DEFINITIVO CARRUSEL CELULAR ===== */
-@media (max-width: 768px) {
-  .work-marquee, .marquee, [class*="marquee"], [class*="carrusel"], [class*="slider"] {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  .work-marquee-track, .marquee-track, .track, [class*="track"] {
-    animation: none !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    width: max-content !important;
-    overflow-x: visible !important;
-    gap: 12px !important;
-    scroll-snap-type: x mandatory !important;
-  }
- /* ===== ARREGLO DEFINITIVO CARRUSEL CELULAR ===== */
-@media (max-width: 768px) {
-  .work-marquee, .marquee, [class*="marquee"], [class*="carrusel"], [class*="slider"] {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  .work-marquee-track, .marquee-track, .track, [class*="track"] {
-    animation: none !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    width: max-content !important;
-    overflow-x: visible !important;
-    gap: 12px !important;
-    scroll-snap-type: x mandatory !important;
-  }
-  .work-marquee-track img, .marquee-track img, .track img {
-    flex: 0 0 auto !important;
-    min-width: 280px !important;
-    scroll-snap-align: start !important;
-    pointer-events: auto !important;
-    user-select: auto !important;
-  }
-/* ===== CARRUSEL FUNCIONA EN PC Y CELULAR ===== */
-/* En computador: se mueve solo */
-.marquee-track, .track, .work-marquee-track {
-  display: flex !important;
-  width: max-content !important;
-  animation: scroll 30s linear infinite !important;
-  will-change: transform;
-}
-
-@keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-/* En celular: se mueve solo Y también con el dedo */
-@media (max-width: 768px) {
-  .marquee, .work-marquee {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  .marquee-track, .track, .work-marquee-track {
-    /* En celular sigue la animación pero más lenta */
-    animation: scroll 30s linear infinite !important;
-    gap: 12px !important;
-  }
-} 
-/* FIX FINAL - PC SE MUEVE SOLO, CELULAR CON DEDO */
 .work-marquee-track {
   display: flex !important;
   width: max-content !important;
-  animation: marquee 25s linear infinite !important;
+  gap: 20px;
+  animation: marqueeScroll 30s linear infinite !important;
 }
-@keyframes marquee {
+@keyframes marqueeScroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
 @media (max-width: 768px) {
   .work-marquee {
-    overflow-x: scroll !important;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
 }
