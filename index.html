@@ -491,5 +491,25 @@
             renderCalendar();
         });
     </script>
+    <script>
+const track = document.querySelector('.track, .marquee-track, .work-track, .work-marquee-track');
+if(track){
+  let isDown = false, startX, scrollLeft;
+  track.addEventListener('touchstart', e => {
+    isDown = true;
+    startX = e.touches[0].pageX - track.offsetLeft;
+    scrollLeft = track.scrollLeft;
+  });
+  track.addEventListener('touchend', () => isDown = false);
+  track.addEventListener('touchmove', e => {
+    if(!isDown) return;
+    const x = e.touches[0].pageX - track.offsetLeft;
+    track.scrollLeft = scrollLeft - (x - startX)*2;
+  });
+  // Forzar animación en celular
+  track.style.animation = 'scroll 25s linear infinite';
+}
+</script>
 </body>
 </html>
+
