@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10100f">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Control de finanzas | La Firms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body class="finance-page">
+    <main class="finance-shell">
+        <header class="finance-header">
+            <a class="finance-brand" href="/" aria-label="Volver a La Firms"><img src="img/logo.jpg" alt=""><span>LA FIRMS<small>CONTROL DE FINANZAS</small></span></a>
+            <a class="finance-back" href="/">Volver al sitio ↗</a>
+        </header>
+
+        <section class="finance-auth" id="finance-auth" hidden>
+            <p class="eyebrow dark-eyebrow">ACCESO PRIVADO</p>
+            <h1 id="finance-auth-title">Control de finanzas</h1>
+            <p id="finance-auth-description">Ingresa tu correo y contraseña para continuar.</p>
+            <form id="finance-login-form" class="finance-card" hidden>
+                <h2>Iniciar sesión</h2>
+                <label for="login-email">Correo</label>
+                <input id="login-email" name="email" type="email" maxlength="254" autocomplete="username" required>
+                <label for="login-password">Contraseña</label>
+                <input id="login-password" name="password" type="password" maxlength="128" autocomplete="current-password" required>
+                <button class="button button-gold finance-submit" type="submit">ENTRAR <span>↗</span></button>
+            </form>
+            <p class="finance-message" id="finance-auth-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="finance-dashboard" id="finance-dashboard" hidden>
+            <div class="finance-dashboard-heading">
+                <div><p class="eyebrow dark-eyebrow">RESUMEN DEL NEGOCIO</p><h1>Control de finanzas</h1></div>
+                <div class="finance-dashboard-actions"><a class="finance-logout" href="/citas.html">Panel de citas</a><button class="finance-logout" id="finance-logout" type="button">Cerrar sesión</button></div>
+            </div>
+
+            <span class="finance-month-label">Mes del resumen</span>
+            <div class="finance-month-picker" aria-label="Seleccionar mes del resumen">
+                <button id="finance-month-previous" type="button" aria-label="Mes anterior">‹</button>
+                <span id="finance-month-name" aria-live="polite"></span>
+                <button id="finance-month-next" type="button" aria-label="Mes siguiente">›</button>
+            </div>
+            <input id="finance-month" type="hidden">
+            <div class="finance-totals" aria-live="polite">
+                <article class="finance-total"><span>INGRESOS</span><strong id="finance-income">$0</strong></article>
+                <article class="finance-total"><span>GASTOS</span><strong id="finance-expenses">$0</strong></article>
+                <article class="finance-total finance-balance"><span>BALANCE</span><strong id="finance-balance">$0</strong></article>
+            </div>
+
+            <div class="finance-content">
+                <form id="finance-transaction-form" class="finance-card">
+                    <h2>Registrar movimiento</h2>
+                    <label for="transaction-type">Tipo de movimiento</label>
+                    <select id="transaction-type" name="type" required><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select>
+                    <label for="transaction-category">Categoría</label>
+                    <input id="transaction-category" name="category" type="text" maxlength="60" placeholder="Ej.: Corte, productos, arriendo" required>
+                    <label for="transaction-description">Descripción</label>
+                    <input id="transaction-description" name="description" type="text" maxlength="160" placeholder="Detalle del movimiento" required>
+                    <label for="transaction-amount">Valor en pesos colombianos</label>
+                    <input id="transaction-amount" name="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Ej.: 25000" required>
+                    <label for="transaction-date">Fecha</label>
+                    <input id="transaction-date" name="date" type="date" required>
+                    <button class="button button-gold finance-submit" type="submit">GUARDAR MOVIMIENTO <span>↗</span></button>
+                    <p class="finance-message" id="finance-transaction-message" role="status" aria-live="polite"></p>
+                </form>
+
+                <section class="finance-card finance-records">
+                    <h2>Movimientos del mes</h2>
+                    <div id="finance-record-list" class="finance-record-list"></div>
+                    <p class="finance-empty" id="finance-empty" hidden>No hay movimientos registrados este mes.</p>
+                </section>
+            </div>
+        </section>
+        <p class="finance-message" id="finance-load-error" role="alert"></p>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+        const friendlyError = (error) => {
+            const messages = {
+                '23502': 'Faltan datos obligatorios. Revisa el formulario.',
+                '23514': 'Revisa los datos ingresados: alguno no cumple las reglas permitidas.',
+                '42501': 'No tienes permisos para realizar esta acción.',
+                'invalid_credentials': 'El correo o la contraseña no son correctos.'
+            };
+            return messages[error.code] || error.message || 'No se pudo completar la operación.';
+        };
+
+        const authPanel = document.querySelector('#finance-auth');
+        const dashboard = document.querySelector('#finance-dashboard');
+        const authMessage = document.querySelector('#finance-auth-message');
+        const loadError = document.querySelector('#finance-load-error');
+        const loginForm = document.querySelector('#finance-login-form');
+        const transactionForm = document.querySelector('#finance-transaction-form');
+        const monthInput = document.querySelector('#finance-month');
+        const returnToAppointments = new URLSearchParams(window.location.search).get('return') === 'citas';
+        const monthName = document.querySelector('#finance-month-name');
+        const previousFinanceMonth = document.querySelector('#finance-month-previous');
+        const nextFinanceMonth = document.querySelector('#finance-month-next');
+        const dateInput = document.querySelector('#transaction-date');
+        const currencyFormatter = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        });
+
+        const colombianDate = () => {
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Bogota',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(new Date());
+            const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+            return `${values.year}-${values.month}-${values.day}`;
+        };
+
+        const showDashboard = async () => {
+            authPanel.hidden = true;
+            dashboard.hidden = false;
+            loadError.textContent = '';
+            await loadTransactions();
+        };
+
+        const showAuth = () => {
+            dashboard.hidden = true;
+            authPanel.hidden = false;
+            loginForm.hidden = false;
+            document.querySelector('#finance-auth-title').textContent = 'Control de finanzas';
+            document.querySelector('#finance-auth-description').textContent = 'Ingresa tu correo y contraseña para continuar.';
+            authMessage.textContent = '';
+        };
+
+        const finishSignIn = async () => {
+            await showDashboard();
+            if (returnToAppointments) window.location.replace('/citas.html');
+        };
+
+        const renderTransactions = (transactions) => {
+            const list = document.querySelector('#finance-record-list');
+            list.replaceChildren();
+            document.querySelector('#finance-empty').hidden = transactions.length > 0;
+            for (const transaction of transactions) {
+                const item = document.createElement('article');
+                item.className = `finance-record ${transaction.tipo === 'ingreso' ? 'is-income' : 'is-expense'}`;
+                const detail = document.createElement('div');
+                const title = document.createElement('strong');
+                title.textContent = transaction.descripcion;
+                const metadata = document.createElement('span');
+                metadata.textContent = `${transaction.fecha} · ${transaction.categoria}`;
+                const value = document.createElement('strong');
+                value.textContent = `${transaction.tipo === 'ingreso' ? '+' : '−'}${currencyFormatter.format(transaction.monto)}`;
+                detail.append(title, metadata);
+                item.append(detail, value);
+                list.append(item);
+            }
+        };
+
+        const loadTransactions = async () => {
+            const [year, month] = monthInput.value.split('-').map(Number);
+            const nextMonth = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+            const { data, error } = await db
+                .from('finance_transactions')
+                .select('id, tipo, descripcion, monto, categoria, fecha')
+                .gte('fecha', `${monthInput.value}-01`)
+                .lt('fecha', nextMonth)
+                .order('fecha', { ascending: false })
+                .order('id', { ascending: false });
+            if (error) throw new Error(friendlyError(error));
+
+            const totals = data.reduce((result, transaction) => {
+                if (transaction.tipo === 'ingreso') result.incomeCop += transaction.monto;
+                else result.expenseCop += transaction.monto;
+                return result;
+            }, { incomeCop: 0, expenseCop: 0 });
+            totals.balanceCop = totals.incomeCop - totals.expenseCop;
+
+            document.querySelector('#finance-income').textContent = currencyFormatter.format(totals.incomeCop);
+            document.querySelector('#finance-expenses').textContent = currencyFormatter.format(totals.expenseCop);
+            document.querySelector('#finance-balance').textContent = currencyFormatter.format(totals.balanceCop);
+            renderTransactions(data);
+        };
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitButton = loginForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            authMessage.textContent = '';
+            try {
+                const { error } = await db.auth.signInWithPassword({
+                    email: document.querySelector('#login-email').value.trim(),
+                    password: document.querySelector('#login-password').value
+                });
+                if (error) throw new Error(friendlyError(error));
+                await finishSignIn();
+                loginForm.reset();
+            } catch (error) {
+                authMessage.textContent = error.message;
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        transactionForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const message = document.querySelector('#finance-transaction-message');
+            const values = Object.fromEntries(new FormData(transactionForm).entries());
+            const amountCop = Number(values.amount);
+            try {
+                if (!['ingreso', 'gasto'].includes(values.type)) throw new Error('Elige ingreso o gasto.');
+                if (!values.category.trim() || values.category.trim().length > 60) {
+                    throw new Error('La categoría es obligatoria y debe tener máximo 60 caracteres.');
+                }
+                if (!values.description.trim() || values.description.trim().length > 160) {
+                    throw new Error('La descripción es obligatoria y debe tener máximo 160 caracteres.');
+                }
+                if (!Number.isSafeInteger(amountCop) || amountCop <= 0) {
+                    throw new Error('Ingresa un valor entero en pesos colombianos mayor que cero.');
+                }
+                const { error } = await db.from('finance_transactions').insert({
+                    tipo: values.type,
+                    categoria: values.category.trim(),
+                    descripcion: values.description.trim(),
+                    monto: amountCop,
+                    fecha: values.date
+                });
+                if (error) throw new Error(friendlyError(error));
+                message.textContent = 'Movimiento guardado.';
+                message.className = 'finance-message is-success';
+                transactionForm.reset();
+                dateInput.value = colombianDate();
+                await loadTransactions();
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = 'finance-message is-error';
+            }
+        });
+
+        const renderFinanceMonth = () => {
+            const [year, month] = monthInput.value.split('-').map(Number);
+            monthName.textContent = new Intl.DateTimeFormat('es-CO', {
+                month: 'long',
+                year: 'numeric',
+                timeZone: 'America/Bogota'
+            }).format(new Date(Date.UTC(year, month - 1, 15, 12)));
+        };
+
+        const changeFinanceMonth = (offset) => {
+            const [year, month] = monthInput.value.split('-').map(Number);
+            const newMonth = new Date(Date.UTC(year, month - 1 + offset, 1, 12));
+            monthInput.value = `${newMonth.getUTCFullYear()}-${String(newMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+            renderFinanceMonth();
+            loadTransactions().catch((error) => {
+                loadError.textContent = error.message;
+            });
+        };
+
+        previousFinanceMonth.addEventListener('click', () => changeFinanceMonth(-1));
+        nextFinanceMonth.addEventListener('click', () => changeFinanceMonth(1));
+
+        document.querySelector('#finance-logout').addEventListener('click', async () => {
+            const { error } = await db.auth.signOut();
+            if (error) {
+                loadError.textContent = friendlyError(error);
+                return;
+            }
+            showAuth();
+        });
+
+        const currentDate = colombianDate();
+        monthInput.value = currentDate.slice(0, 7);
+        renderFinanceMonth();
+        dateInput.value = currentDate;
+
+        db.auth.getSession()
+            .then(({ data: { session } }) => {
+                if (session && returnToAppointments) {
+                    window.location.replace('/citas.html');
+                    return;
+                }
+                return session ? showDashboard() : showAuth();
+            })
+            .catch((error) => {
+                loadError.textContent = friendlyError(error);
+            });
+
+        db.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') showAuth();
+        });
+    </script>
+</body>
+</html>

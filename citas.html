@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10100f">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Panel de citas | La Firms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body class="finance-page">
+    <main class="finance-shell">
+        <header class="finance-header">
+            <a class="finance-brand" href="/" aria-label="Volver a La Firms"><img src="img/logo.jpg" alt=""><span>LA FIRMS<small>ADMINISTRACIÓN</small></span></a>
+            <a class="finance-back" href="/">Volver al sitio ↗</a>
+        </header>
+        <section class="appointments-dashboard" id="appointments-dashboard" hidden>
+            <div class="finance-dashboard-heading">
+                <div><p class="eyebrow dark-eyebrow">ADMINISTRACIÓN</p><h1>Panel de citas</h1></div>
+                <div class="finance-dashboard-actions"><a class="finance-logout" href="/finanzas.html">Finanzas</a><button class="finance-logout" id="appointments-logout" type="button">Cerrar sesión</button></div>
+            </div>
+            <p class="appointments-intro">Consulta las reservas y actualiza su estado.</p>
+            <div class="appointment-filters">
+                <div>
+                    <label class="finance-month-label" for="appointments-month">Mes</label>
+                    <div class="finance-month-picker">
+                        <button id="appointments-month-previous" type="button" aria-label="Mes anterior">‹</button>
+                        <span id="appointments-month-name" aria-live="polite"></span>
+                        <button id="appointments-month-next" type="button" aria-label="Mes siguiente">›</button>
+                    </div>
+                    <input id="appointments-month" type="hidden">
+                </div>
+                <div>
+                    <label class="finance-month-label" for="appointments-status-filter">Estado</label>
+                    <select class="appointment-status-filter" id="appointments-status-filter">
+                        <option value="todas">Todos los estados</option>
+                        <option value="pendiente">Pendientes</option>
+                        <option value="confirmada">Confirmadas</option>
+                        <option value="atendida">Atendidas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                </div>
+            </div>
+            <p class="finance-message" id="appointments-error" role="alert"></p>
+            <div class="appointment-list" id="appointment-list" aria-live="polite"></div>
+            <p class="appointment-empty" id="appointment-empty" hidden>No hay citas para los filtros seleccionados.</p>
+        </section>
+        <p class="finance-message" id="appointments-load-error" role="alert"></p>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+        const friendlyError = (error) => {
+            const messages = {
+                '23514': 'Revisa los datos ingresados: alguno no cumple las reglas permitidas.',
+                '42501': 'No tienes permisos para realizar esta acción.',
+                'PGRST301': 'Tu sesión expiró. Inicia sesión de nuevo.'
+            };
+            return messages[error.code] || error.message || 'No se pudo completar la operación.';
+        };
+
+        const dashboard = document.querySelector('#appointments-dashboard');
+        const list = document.querySelector('#appointment-list');
+        const emptyMessage = document.querySelector('#appointment-empty');
+        const errorMessage = document.querySelector('#appointments-error');
+        const loadError = document.querySelector('#appointments-load-error');
+        const monthInput = document.querySelector('#appointments-month');
+        const monthName = document.querySelector('#appointments-month-name');
+        const statusFilter = document.querySelector('#appointments-status-filter');
+        const monthFormatter = new Intl.DateTimeFormat('es-CO', {
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'America/Bogota'
+        });
+        const statusLabels = {
+            pendiente: 'Pendiente',
+            confirmada: 'Confirmada',
+            atendida: 'Atendida',
+            cancelada: 'Cancelada'
+        };
+
+        const renderMonth = () => {
+            const [year, month] = monthInput.value.split('-').map(Number);
+            monthName.textContent = monthFormatter.format(new Date(Date.UTC(year, month - 1, 15, 12)));
+        };
+
+        const formatAppointmentDate = (date) => {
+            if (!date) return 'Fecha pendiente';
+            const [year, month, day] = date.split('-').map(Number);
+            return new Intl.DateTimeFormat('es-CO', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                timeZone: 'UTC'
+            }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+        };
+
+        const formatAppointmentTime = (time) => {
+            if (!time) return 'Hora pendiente';
+            const [hour, minute] = time.split(':').map(Number);
+            return new Intl.DateTimeFormat('es-CO', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'UTC'
+            }).format(new Date(Date.UTC(2020, 0, 1, hour, minute)));
+        };
+
+        const renderAppointments = (appointments) => {
+            list.replaceChildren();
+            emptyMessage.hidden = appointments.length > 0;
+            for (const appointment of appointments) {
+                const card = document.createElement('article');
+                card.className = 'appointment-card';
+
+                const header = document.createElement('div');
+                header.className = 'appointment-card-heading';
+                const customer = document.createElement('div');
+                const name = document.createElement('h2');
+                name.textContent = appointment.nombre;
+                const phone = document.createElement('a');
+                phone.href = `tel:${String(appointment.telefono || '').replace(/[^\d+]/g, '')}`;
+                phone.textContent = appointment.telefono;
+                customer.append(name, phone);
+                const badge = document.createElement('span');
+                badge.className = `appointment-status-badge is-${appointment.status}`;
+                badge.textContent = statusLabels[appointment.status] || 'Pendiente';
+                header.append(customer, badge);
+
+                const details = document.createElement('div');
+                details.className = 'appointment-details';
+                for (const detail of [
+                    ['Fecha', formatAppointmentDate(appointment.appointment_date)],
+                    ['Hora', formatAppointmentTime(appointment.appointment_time)],
+                    ['Servicio', appointment.service || 'No especificado'],
+                    ['Barbero', appointment.barbero || 'Sin asignar']
+                ]) {
+                    const item = document.createElement('p');
+                    const label = document.createElement('span');
+                    label.textContent = detail[0];
+                    const value = document.createElement('strong');
+                    value.textContent = detail[1];
+                    item.append(label, value);
+                    details.append(item);
+                }
+
+                const message = document.createElement('p');
+                message.className = 'appointment-message';
+                message.textContent = appointment.mensaje || 'Sin mensaje adicional.';
+
+                const actions = document.createElement('div');
+                actions.className = 'appointment-card-actions';
+                const actionLabel = document.createElement('label');
+                actionLabel.textContent = 'Actualizar estado';
+                actionLabel.htmlFor = `appointment-status-${appointment.id}`;
+                const actionSelect = document.createElement('select');
+                actionSelect.id = `appointment-status-${appointment.id}`;
+                actionSelect.setAttribute('aria-label', `Estado de la cita de ${appointment.nombre}`);
+                for (const [value, label] of Object.entries(statusLabels)) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = label;
+                    option.selected = value === appointment.status;
+                    actionSelect.append(option);
+                }
+                actionSelect.addEventListener('change', async () => {
+                    actionSelect.disabled = true;
+                    errorMessage.textContent = '';
+                    try {
+                        const { error } = await db
+                            .from('citas')
+                            .update({ estado: actionSelect.value })
+                            .eq('id', appointment.id);
+                        if (error) throw new Error(friendlyError(error));
+                        await loadAppointments();
+                    } catch (error) {
+                        errorMessage.textContent = error.message;
+                        actionSelect.value = appointment.status;
+                    } finally {
+                        actionSelect.disabled = false;
+                    }
+                });
+                actions.append(actionLabel, actionSelect);
+                card.append(header, details, message, actions);
+                list.append(card);
+            }
+        };
+
+        const loadAppointments = async () => {
+            errorMessage.textContent = '';
+            const month = monthInput.value;
+            const [year, monthNumber] = month.split('-').map(Number);
+            const nextMonth = new Date(Date.UTC(year, monthNumber, 1)).toISOString().slice(0, 10);
+            let query = db
+                .from('citas')
+                .select('id, notas, fecha, hora, estado, cliente_id, servicio_id, barbero_id')
+                .or(`fecha.is.null,and(fecha.gte.${month}-01,fecha.lt.${nextMonth})`);
+            if (statusFilter.value !== 'todas') query = query.eq('estado', statusFilter.value);
+            const { data, error } = await query
+                .order('fecha', { ascending: true, nullsFirst: true })
+                .order('hora', { ascending: true })
+                .order('id', { ascending: true });
+            if (error) throw new Error(friendlyError(error));
+
+            const appointments = data || [];
+            const uniqueIds = (values) => [...new Set(values.filter(Boolean))];
+            const clienteIds = uniqueIds(appointments.map((appointment) => appointment.cliente_id));
+            const servicioIds = uniqueIds(appointments.map((appointment) => appointment.servicio_id));
+            const barberoIds = uniqueIds(appointments.map((appointment) => appointment.barbero_id));
+            const [clientes, servicios, barberos] = await Promise.all([
+                clienteIds.length ? db.from('clientes').select('id, nombre, telefono').in('id', clienteIds) : Promise.resolve({ data: [] }),
+                servicioIds.length ? db.from('servicios').select('id, nombre').in('id', servicioIds) : Promise.resolve({ data: [] }),
+                barberoIds.length ? db.from('barberos').select('id, nombre').in('id', barberoIds) : Promise.resolve({ data: [] })
+            ]);
+            const readField = (rows, id, key) => (rows.find((row) => row.id === id) || {})[key] || '';
+            const clientesList = clientes.data || [];
+            const serviciosList = servicios.data || [];
+            const barberosList = barberos.data || [];
+            renderAppointments(appointments.map((appointment) => ({
+                id: appointment.id,
+                nombre: readField(clientesList, appointment.cliente_id, 'nombre') || 'Cliente',
+                telefono: readField(clientesList, appointment.cliente_id, 'telefono'),
+                mensaje: appointment.notas,
+                appointment_date: appointment.fecha,
+                appointment_time: appointment.hora,
+                service: readField(serviciosList, appointment.servicio_id, 'nombre') || 'No especificado',
+                barbero: readField(barberosList, appointment.barbero_id, 'nombre'),
+                status: appointment.estado
+            })));
+        };
+
+        const changeMonth = (offset) => {
+            const [year, month] = monthInput.value.split('-').map(Number);
+            const nextMonth = new Date(Date.UTC(year, month - 1 + offset, 1, 12));
+            monthInput.value = `${nextMonth.getUTCFullYear()}-${String(nextMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+            renderMonth();
+            loadAppointments().catch((error) => { loadError.textContent = error.message; });
+        };
+
+        document.querySelector('#appointments-month-previous').addEventListener('click', () => changeMonth(-1));
+        document.querySelector('#appointments-month-next').addEventListener('click', () => changeMonth(1));
+        statusFilter.addEventListener('change', () => {
+            loadAppointments().catch((error) => { loadError.textContent = error.message; });
+        });
+        document.querySelector('#appointments-logout').addEventListener('click', async () => {
+            const { error } = await db.auth.signOut();
+            if (error) {
+                loadError.textContent = friendlyError(error);
+                return;
+            }
+            window.location.replace('/finanzas.html');
+        });
+
+        const todayParts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Bogota',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(new Date());
+        const today = Object.fromEntries(todayParts.map(({ type, value }) => [type, value]));
+        monthInput.value = `${today.year}-${today.month}`;
+        renderMonth();
+        db.auth.getSession()
+            .then(async ({ data: { session } }) => {
+                if (!session) {
+                    window.location.replace('/finanzas.html?return=citas');
+                    return;
+                }
+                dashboard.hidden = false;
+                await loadAppointments();
+            })
+            .catch((error) => { loadError.textContent = friendlyError(error); });
+    </script>
+</body>
+</html>
