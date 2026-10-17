@@ -460,3 +460,19 @@ button, input, select, textarea { font: inherit; }
     gap: 12px !important;
   }
 } 
+/* FIX FINAL - PC SE MUEVE SOLO, CELULAR CON DEDO */
+.work-marquee-track {
+  display: flex !important;
+  width: max-content !important;
+  animation: marquee 25s linear infinite !important;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (max-width: 768px) {
+  .work-marquee {
+    overflow-x: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
