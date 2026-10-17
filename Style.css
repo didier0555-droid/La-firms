@@ -434,4 +434,29 @@ button, input, select, textarea { font: inherit; }
     pointer-events: auto !important;
     user-select: auto !important;
   }
+/* ===== CARRUSEL FUNCIONA EN PC Y CELULAR ===== */
+/* En computador: se mueve solo */
+.marquee-track, .track, .work-marquee-track {
+  display: flex !important;
+  width: max-content !important;
+  animation: scroll 30s linear infinite !important;
+  will-change: transform;
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* En celular: se mueve solo Y también con el dedo */
+@media (max-width: 768px) {
+  .marquee, .work-marquee {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .marquee-track, .track, .work-marquee-track {
+    /* En celular sigue la animación pero más lenta */
+    animation: scroll 30s linear infinite !important;
+    gap: 12px !important;
+  }
 } 
