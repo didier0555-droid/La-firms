@@ -490,26 +490,35 @@
             appointmentDate.dispatchEvent(new Event('change'));
             renderCalendar();
         });
-    </script>
-    <script>
-const track = document.querySelector('.track, .marquee-track, .work-track, .work-marquee-track');
-if(track){
-  let isDown = false, startX, scrollLeft;
-  track.addEventListener('touchstart', e => {
-    isDown = true;
-    startX = e.touches[0].pageX - track.offsetLeft;
-    scrollLeft = track.scrollLeft;
-  });
-  track.addEventListener('touchend', () => isDown = false);
-  track.addEventListener('touchmove', e => {
-    if(!isDown) return;
-    const x = e.touches[0].pageX - track.offsetLeft;
-    track.scrollLeft = scrollLeft - (x - startX)*2;
-  });
-  // Forzar animación en celular
-  track.style.animation = 'scroll 25s linear infinite';
-}
+   </script>
+<script>
+  // FIX DEFINITIVO - duplica y permite arrastre en celular
+  const track = document.querySelector('.work-marquee-track');
+  const marquee = document.querySelector('.work-marquee');
+  if (track) {
+    // si tienes 3 imagenes las vuelve 6 para que no quede hueco
+    if (track.children.length <= 6) {
+      track.innerHTML = track.innerHTML + track.innerHTML;
+    }
+  }
+  // arrastre con dedo en celular
+  if (marquee && track) {
+    let isDown = false, startX, scrollLeft;
+    marquee.addEventListener('touchstart', e => {
+      isDown = true;
+      startX = e.touches[0].pageX - marquee.offsetLeft;
+      scrollLeft = marquee.scrollLeft;
+    });
+    marquee.addEventListener('touchend', () => { isDown = false; });
+    marquee.addEventListener('touchmove', e => {
+      if (!isDown) return;
+      const x = e.touches[0].pageX - marquee.offsetLeft;
+      marquee.scrollLeft = scrollLeft - (x - startX) * 2;
+    });
+  }
 </script>
+</body>
+</html>
 </body>
 </html>
 
