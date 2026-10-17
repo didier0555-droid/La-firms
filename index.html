@@ -71,7 +71,29 @@
 <figure class="work-item"><img src="img/mullet-bajo.jpeg" loading="lazy"></figure>
 <figure class="work-item"><img src="img/mullet-y-diseno.jpeg" loading="lazy"></figure>    
                    
+</div>
+</div>
 
+<script>
+// Hacer que la galería se pueda arrastrar con el dedo en celular
+const firstWork = document.querySelector('.work-item');
+if(firstWork){
+  const track = firstWork.parentElement;
+  track.style.display = 'flex';
+  track.style.overflowX = 'auto';
+  track.style.gap = '16px';
+  track.style.scrollSnapType = 'x mandatory';
+  track.style.webkitOverflowScrolling = 'touch';
+  track.style.paddingBottom = '20px';
+  track.style.cursor = 'grab';
+  document.querySelectorAll('.work-item').forEach(item=>{
+    item.style.minWidth = '80%';
+    item.style.scrollSnapAlign = 'start';
+  });
+}
+</script>
+<div>
+<div>
         <section class="reviews-section" id="opiniones">
             <div class="reviews-container">
                 <div class="reviews-heading">
