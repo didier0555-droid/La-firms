@@ -379,4 +379,19 @@ button, input, select, textarea { font: inherit; }
     .footer-main > p { order: 3; width: 100%; margin: 0; }
     .footer-bottom { align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding: 10px 0; }
 }
+/* FORZAR MOVIMIENTO EN CELULAR */
+@media (max-width: 768px) {
+  .marquee-track, .track, .work-track {
+    animation: scroll 25s linear infinite !important;
+    animation-play-state: running !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
 
+/* Si el celular tiene "reducir movimiento", igual se mueve */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .track, .work-track {
+    animation: scroll 25s linear infinite !important;
+  }
+}
