@@ -380,10 +380,3 @@ button, input, select, textarea { font: inherit; }
     .footer-bottom { align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding: 10px 0; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-    .work-marquee { overflow-x: auto; }
-    .work-track { animation: none; }
-    .work-item { animation: none; }
-}
