@@ -395,3 +395,43 @@ button, input, select, textarea { font: inherit; }
     animation: scroll 25s linear infinite !important;
   }
 }
+/* ===== ARREGLO DEFINITIVO CARRUSEL CELULAR ===== */
+@media (max-width: 768px) {
+  .work-marquee, .marquee, [class*="marquee"], [class*="carrusel"], [class*="slider"] {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .work-marquee-track, .marquee-track, .track, [class*="track"] {
+    animation: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: max-content !important;
+    overflow-x: visible !important;
+    gap: 12px !important;
+    scroll-snap-type: x mandatory !important;
+  }
+ /* ===== ARREGLO DEFINITIVO CARRUSEL CELULAR ===== */
+@media (max-width: 768px) {
+  .work-marquee, .marquee, [class*="marquee"], [class*="carrusel"], [class*="slider"] {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .work-marquee-track, .marquee-track, .track, [class*="track"] {
+    animation: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: max-content !important;
+    overflow-x: visible !important;
+    gap: 12px !important;
+    scroll-snap-type: x mandatory !important;
+  }
+  .work-marquee-track img, .marquee-track img, .track img {
+    flex: 0 0 auto !important;
+    min-width: 280px !important;
+    scroll-snap-align: start !important;
+    pointer-events: auto !important;
+    user-select: auto !important;
+  }
+} 
