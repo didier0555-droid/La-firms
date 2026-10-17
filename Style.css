@@ -392,7 +392,7 @@ button, input, select, textarea { font: inherit; }
 }
 @keyframes marqueeScroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to { transform: translateX(-33.333%); }
 }
 @media (max-width: 768px) {
   .work-marquee {
